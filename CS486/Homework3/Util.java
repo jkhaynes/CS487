@@ -10,7 +10,6 @@ public class Util {
 	    while (i < message.length){
 	  		output[i % HASH_SIZE] += message[i++];
 	  	}
-	  	output[HASH_SIZE-1] = '\0';
 		return output;	
 		
 	}
@@ -19,11 +18,10 @@ public class Util {
 		
 		char[] output = new char[HASH_SIZE];
 		int i = 0;
-		while (i < message.length){
+		while (message[i] != '\0' && i < message.length){
 			output[i] = (char) (message[i] + key);
 			i++;
 		}
-		output[HASH_SIZE-1] = '\0';
 		return output;
 	}
 	

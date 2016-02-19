@@ -10,10 +10,15 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string>
+#include <iostream>
 
 using namespace std;
 
-int main(int argc, char *argv[]) {
+#define MAX_SIZE 1024
+#define HASH_SIZE 256
+#define KEY 3
+
+int main() {
 	int sockfd; // socket file descriptor
 	int portno; // port number
 	struct sockaddr_in serv_addr;
@@ -37,34 +42,39 @@ int main(int argc, char *argv[]) {
 	if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
 	    perror("ERROR connecting");
 
-	char bufferMes[1024] = {0};								
+	char bufferMes[MAX_SIZE] = {0};		
+	char bufferHash[HASH_SIZE] = {0};
+	char bufferSig[HASH_SIZE] = {0};						
 
-	printf("Please enter the message: ");
-  	fgets(bufferMes, 1023, stdin);
+  	string input_string;
+  	cout << "Enter message: ";
+  	cin.getline (bufferMes, MAX_SIZE);
 
-	int wbytes;
-	//char bufferSig[256];
-	//bufferSig = (char *)str.c_str(); // convert from string to c string, has to have \0 terminal
+	int wInt;
 
-	wbytes = write(sockfd, bufferMes, strlen(bufferMes));
-	if(wbytes < 0) perror("Cannot write to socket");
+	//Send original message
+	wInt = write(sockfd, bufferMes, MAX_SIZE);
+	if(wInt < 0) perror("Cannot write to socket");
 
-	char bufferHash[256] = {0};
-	char bufferSig[256] = {0};
-
+	//Hash message
 	hash(bufferMes, bufferHash);
-	encryption(bufferHash, 3, bufferSig);
 
-	wbytes = write(sockfd, bufferSig, strlen(bufferSig));
-	if(wbytes < 0) perror("Cannot write to socket");
+	//Encrypt message
+	encryption(bufferHash, KEY, bufferSig);
 
-	char rbuff[256];
-	int rbytes; 
+	//Send signature to server
+	wInt = write(sockfd, bufferSig, HASH_SIZE);
+	if(wInt < 0) perror("Cannot write to socket");
+
+
+	//Recieve true/false result from server
+	char result[HASH_SIZE];
+	int rInt; 
  
-	//rbytes = recv(sockfd, rbuff, sizeof(rbuff), 0); // similar to read(), but return -1 if socket closed
-	//if(rbytes < 0) perror("Cannot read to socket");
-	//rbuff[rbytes] = '\0'; // set null terminal
-	//printf("Message: %s\n", rbuff);
+	rInt = recv(sockfd, result, sizeof(result), 0); // similar to read(), but return -1 if socket closed
+	if(rInt < 0) perror("Cannot read to socket");
+	result[rInt] = '\0'; // set null terminal
+	printf("Message: %s\n", result);
 
 	return 0;
 
